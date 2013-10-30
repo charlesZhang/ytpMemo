@@ -50,6 +50,9 @@ class ytp_Main( ytp_UI.MainFrameBase ):
         self.m_MemoTable.Hide()
         self.m_richText1.Hide()
 
+        self.conn = sqlite3.connect("ytp_Database.db")
+        self.cursor = self.conn.cursor()
+
         img = PyEmbeddedImage(images._bye).GetBitmap()
         self.m_Exit.SetBitmapHover( img )
 
@@ -152,8 +155,6 @@ class ytp_Main( ytp_UI.MainFrameBase ):
             self.m_MemoTable.Layout()
             self.Layout()
 
-        conn = sqlite3.connect("ytp_Database.db")
-        cursor = conn.cursor()
         timeStr = str(self.m_calendar1.GetDate())
         dateList  = re.split('/| |\n', timeStr)
         lastDay = calendar.monthrange(int('20%s'%dateList[2]),int(dateList[0]))[1]
@@ -165,8 +166,8 @@ class ytp_Main( ytp_UI.MainFrameBase ):
         SELECT * FROM ytpMemo WHERE 
             Date BETWEEN '%s' AND '%s'"""%(start_date, end_date)
 
-        cursor.execute(sqlcmd)
-        ret = cursor.fetchall()
+        self.cursor.execute(sqlcmd)
+        ret = self.cursor.fetchall()
 
         self.m_gridMemo.DeleteRows(0,31,False)
         self.m_gridMemo.SetColLabelValue(0, "Date")
@@ -192,8 +193,7 @@ class ytp_Main( ytp_UI.MainFrameBase ):
     def On_ReadFile2Database( self, event ):
         #Read data from file and commit to database
         #Each file contains single month data only. 
-        conn = sqlite3.connect("ytp_Database.db")
-        cursor = conn.cursor()
+
         timeStr = str(self.m_calendar1.GetDate())
         date  = timeStr.split(' ')[0]
         cMonth =date.split('/')[0]
@@ -227,7 +227,7 @@ class ytp_Main( ytp_UI.MainFrameBase ):
    						
    				if inCome or Spend:
    					try:
-   						cursor.execute("INSERT INTO ytpMemo VALUES ('%s', %d, %d, '%s')"%(newDate, Spend, inCome, memoStr))
+   						self.cursor.execute("INSERT INTO ytpMemo VALUES ('%s', %d, %d, '%s')"%(newDate, Spend, inCome, memoStr))
    					except:
    						dlg = wx.MessageDialog(self,
    							"Data alredy exist!\n Do you really want to overwrite existing data?",
@@ -240,8 +240,8 @@ class ytp_Main( ytp_UI.MainFrameBase ):
    							SET Income = '%d', Spend = '%d', Memo = '%s' 
    							WHERE Date = '%s'"""%(inCome, Spend, memoStr, newDate)
    							
-   							cursor.execute(sqlcmd)
-   					conn.commit()
+   							self.cursor.execute(sqlcmd)
+   					self.conn.commit()
    					str1 = u"\t%s : Spend: %s\tEarn: %s\tMemo: %s"%(newDate, inCome, Spend, memoStr)
    					logging.info(str1)
 
@@ -269,8 +269,7 @@ class ytp_Main( ytp_UI.MainFrameBase ):
         self.new.Show()
     
     def LoadDay( self ):
-        conn = sqlite3.connect("ytp_Database.db")
-        cursor = conn.cursor()
+
         timeStr = str(self.m_calendar1.GetDate())
         idate  = timeStr.split(' ')[0]
 
@@ -286,8 +285,8 @@ class ytp_Main( ytp_UI.MainFrameBase ):
         SELECT Income, Spend, Memo FROM ytpMemo WHERE 
             Date = '%s'"""%(idate)
 
-        cursor.execute(sqlcmd)
-        ret = cursor.fetchall()
+        self.cursor.execute(sqlcmd)
+        ret = self.cursor.fetchall()
 
         self.m_richText1.Clear()
         self.m_tcSpend.SetValue('')
@@ -316,8 +315,7 @@ class ytp_Main( ytp_UI.MainFrameBase ):
             self.Close()
 
     def On_DeleteMemo( self, event ):
-        conn = sqlite3.connect("ytp_Database.db")
-        cursor = conn.cursor()
+
         timeStr = str(self.m_calendar1.GetDate())
         date  = timeStr.split(' ')[0]
 
@@ -335,12 +333,11 @@ class ytp_Main( ytp_UI.MainFrameBase ):
                 cursor.execute(sqlcmd)
         except:
             pass
-        conn.commit()
+        self.conn.commit()
         self.LoadDay()
 
     def m_btSave( self, event ):
-        conn = sqlite3.connect("ytp_Database.db")
-        cursor = conn.cursor()
+
         timeStr = str(self.m_calendar1.GetDate())
         date  = timeStr.split(' ')[0]
         print date
@@ -360,7 +357,7 @@ class ytp_Main( ytp_UI.MainFrameBase ):
             return
 
         try:
-            cursor.execute("INSERT INTO ytpMemo VALUES ('%s', %d, %d, '%s')"%(date, Spend, inCome, memo))
+            self.cursor.execute("INSERT INTO ytpMemo VALUES ('%s', %d, %d, '%s')"%(date, Spend, inCome, memo))
         except:
             dlg = wx.MessageDialog(self,
                 "Data alredy exist!\n Do you really want to overwrite existing data?",
@@ -373,8 +370,8 @@ class ytp_Main( ytp_UI.MainFrameBase ):
                 SET Income = '%d', Spend = '%d', Memo = '%s' 
                 WHERE Date = '%s'"""%(inCome, Spend, memo, date)
 
-                cursor.execute(sqlcmd)
-        conn.commit()
+                self.cursor.execute(sqlcmd)
+        self.conn.commit()
         dlg = wx.MessageDialog(self,
             "Done",
             "Saving Data", wx.OK)
@@ -403,8 +400,6 @@ class ytp_Main( ytp_UI.MainFrameBase ):
             self.m_InputArea.Hide()
             self.m_InputArea.Layout()
             
-        conn = sqlite3.connect("ytp_Database.db")
-        cursor = conn.cursor()
         timeStr = str(self.m_calendar1.GetDate())
         dateList  = re.split('/| |\n', timeStr)
         lastDay = calendar.monthrange(int('20%s'%dateList[2]),int(dateList[0]))[1]
@@ -427,8 +422,8 @@ class ytp_Main( ytp_UI.MainFrameBase ):
             SELECT Income, Spend FROM ytpMemo WHERE 
                 Date BETWEEN '%s' AND '%s'"""%(start_date, end_date)
     
-            cursor.execute(sqlcmd)
-            ret = cursor.fetchall()
+            self.cursor.execute(sqlcmd)
+            ret = self.cursor.fetchall()
     
             spend  =  0
             earn  =  0
